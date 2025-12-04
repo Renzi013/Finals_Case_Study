@@ -1,0 +1,167 @@
+.account-page {
+  padding: 40px 0;
+  min-height: 100vh;
+}
+
+.account-sidebar {
+  background: white;
+  padding: 30px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+  text-align: center;
+}
+
+.user-avatar {
+  font-size: 4rem;
+  margin-bottom: 15px;
+}
+
+.user-name {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.user-email {
+  color: #999;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.nav-pills .nav-link {
+  color: #555;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+  background-color: #f0f0f0;
+  color: #667eea;
+}
+
+.nav-pills .nav-link.active {
+  background-color: #667eea;
+}
+
+.tab-content-card {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab-content-card h5 {
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 25px;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 15px;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-check {
+  margin-bottom: 15px;
+}
+
+.form-check-input:checked {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+/* Orders List */
+.orders-list {
+  margin-top: 20px;
+}
+
+.order-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+}
+
+.order-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.order-header h6 {
+  color: #333;
+  font-weight: 600;
+  margin: 0;
+}
+
+.order-date {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.order-status {
+  margin: 10px 0;
+}
+
+.badge {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+
+.order-total {
+  color: #667eea;
+  font-weight: 600;
+  margin: 10px 0;
+}
+
+@media (max-width: 768px) {
+  .account-sidebar {
+    margin-bottom: 30px;
+  }
+
+  .tab-content-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .account-page {
+    padding: 20px 0;
+  }
+
+  .account-sidebar {
+    padding: 20px 15px;
+  }
+
+  .tab-content-card {
+    padding: 15px;
+  }
+
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .order-date {
+    margin-top: 5px;
+  }
+}
