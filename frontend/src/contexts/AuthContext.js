@@ -1,15 +1,19 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
+//import axios here for backend integration later
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  // remove when refactoring (line 7-12)
   const [isAdmin, setIsAdmin] = useState(false);
+  // remove when refactoring (line 8-12)
   const [users, setUsers] = useState([
     { id: 1, email: 'admin@example.com', password: 'admin123', name: 'Admin User', isAdmin: true },
     { id: 2, email: 'user@example.com', password: 'user123', name: 'Test User', isAdmin: false }
   ]);
+
+  // Axios instance can be set up here for backend integration later
+
 
   // refactor this to load from backend later
   useEffect(() => {
@@ -25,7 +29,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // refactor to integrate with backend later
+  // Refactor register function to integrate with backend later
   const register = useCallback((email, password, name) => {
     
     if (users.find(u => u.email === email)) {
@@ -48,6 +52,8 @@ export const AuthProvider = ({ children }) => {
     return { success: true, message: 'Registration successful' };
   }, [users]);
 
+
+  // refactor login function to integrate with backend later
   const login = useCallback((email, password, isAdminLogin = false) => {
     const user = users.find(u => u.email === email && u.password === password);
 
@@ -66,6 +72,7 @@ export const AuthProvider = ({ children }) => {
     return { success: true, message: 'Login successful' };
   }, [users]);
 
+  // refactor logout function to integrate with backend later
   const logout = useCallback(() => {
     setCurrentUser(null);
     setIsAdmin(false);
@@ -82,6 +89,8 @@ export const AuthProvider = ({ children }) => {
     }
   }, [currentUser, users]);
 
+  // no changes needed in the return statement for backend integration.
+  // delete all comments once done refactoring
   return (
     <AuthContext.Provider value={{
       currentUser,

@@ -1,4 +1,7 @@
 import React, { createContext, useState, useCallback } from 'react';
+// import axios here for backend integration
+
+// remove all imports images line 5 - 23
 import white from '../assets/images/whiteTshirt.jpg';
 import jeans from '../assets/images/jeans.jpg';
 import summer from '../assets/images/summer.jpg';
@@ -23,8 +26,9 @@ import Mshirt6 from '../assets/images/Mshirt6.jpeg';
 export const ProductContext = createContext();
 
 export const ProductProvider = ({ children }) => {
+   // const [products, setProducts] = useState([]);
+   // remove line 31 - 52
   const [products, setProducts] = useState([
-    // Sample products
     { id: 1, name: 'Classic White T-Shirt', price: 29.99, category: 'Tops', size: ['XS', 'S', 'M', 'L', 'XL'], image: white, description: 'Comfortable and versatile white t-shirt' },
     { id: 2, name: 'Denim Blue Jeans', price: 59.99, category: 'Bottoms', size: ['28', '30', '32', '34', '36'], image: jeans, description: 'Classic fit denim jeans' },
     { id: 3, name: 'Black Hoodie', price: 49.99, category: 'Tops', size: ['XS', 'S', 'M', 'L', 'XL'], image: hoodie, description: 'Cozy and warm black hoodie' },
@@ -47,6 +51,10 @@ export const ProductProvider = ({ children }) => {
 
   ]);
 
+  // Axios functions for backend integration can be added here
+
+
+  // refactor everything starting from line 58
   const getProductById = useCallback((id) => {
     return products.find(p => p.id === parseInt(id));
   }, [products]);
@@ -71,14 +79,17 @@ export const ProductProvider = ({ children }) => {
     return [...new Set(products.map(p => p.category))];
   }, [products]);
 
+  // remove
   const addProduct = useCallback((product) => {
     setProducts([...products, { ...product, id: Math.max(...products.map(p => p.id)) + 1 }]);
   }, [products]);
 
+  // remove
   const updateProduct = useCallback((id, updatedProduct) => {
     setProducts(products.map(p => p.id === id ? { ...p, ...updatedProduct } : p));
   }, [products]);
 
+  //remove
   const deleteProduct = useCallback((id) => {
     setProducts(products.filter(p => p.id !== id));
   }, [products]);
