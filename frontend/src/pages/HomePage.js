@@ -1,11 +1,11 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Row, Col, Button } from 'react-bootstrap';
+import { Container, Row, Col, Button, Spinner } from 'react-bootstrap';
 import { ProductContext } from '../contexts/ProductContext';
 import './HomePage.css';
 
 const HomePage = () => {
-  const { products } = useContext(ProductContext);
+  const { products, loading} = useContext(ProductContext);
   const featuredProducts = products.slice(0, 6);
 
   return (
@@ -31,6 +31,13 @@ const HomePage = () => {
       <section className="py-5">
         <Container>
           <h2 className="text-center mb-5">Featured Products</h2>
+          
+          { loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant='primary' />
+              <p className="mt-3 text-muted">Loading featured items...</p>
+            </div>
+          ) : (
           <Row>
             {featuredProducts.map(product => (
               <Col lg={4} md={6} sm={12} key={product.id} className="mb-4">
@@ -50,6 +57,8 @@ const HomePage = () => {
               </Col>
             ))}
           </Row>
+          )}
+        
         </Container>
       </section>
 
