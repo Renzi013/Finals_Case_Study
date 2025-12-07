@@ -3,28 +3,38 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap';
 import { CartContext } from '../contexts/CartContext';
 import { AuthContext } from '../contexts/AuthContext';
+import axios from 'axios';
 import './CheckoutPage.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { cart, getTotalPrice, clearCart } = useContext(CartContext);
+
   const { currentUser } = useContext(AuthContext);
+
   const [formData, setFormData] = useState({
     firstName: currentUser?.name?.split(' ')[0] || '',
     lastName: currentUser?.name?.split(' ')[1] || '',
+
     email: currentUser?.email || '',
-    phone: '',
-    address: '',
+    phone: currentUser?.phone || '',
+    address: currentUser?.address || '',
     city: '',
     state: '',
     zip: '',
     cardName: '',
     cardNumber: '',
     cardExpiry: '',
-    cardCVC: ''
+    cardCVC: '',
   });
+
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const shippingCost = getTotalPrice() > 50 ? 0 : 10;
+  const tax = getTotalPrice() * 0.1;
+  const finalTotal = getTotalPrice() + shippingCost + tax;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -55,44 +65,92 @@ const CheckoutPage = () => {
     if (!formData.cardExpiry.trim()) newErrors.cardExpiry = 'Expiry date is required';
     if (!formData.cardCVC.trim()) newErrors.cardCVC = 'CVC is required';
 
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      setOrderPlaced(true);
-      setTimeout(() => {
-        clearCart();
-        navigate('/');
-      }, 2000);
+
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        alert("You must be logged in to place an order");
+        navigate('/login');
+        return;
+      }
+
+      const orderPayload = {
+        total_price: finalTotal,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zip,
+        items: cart.map(item => ({
+          id: item.id,
+          size: item.size,
+          quantity: item.quantity,
+          price: item.price
+        }))
+      };
+
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/orders`, orderPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      if (response.data.success) {
+        setOrderPlaced(true);
+        setTimeout(() => {
+          clearCart();
+          navigate('/');
+        }, 3000);
+
+      }
+
+    } catch (error) {
+      console.error("Order Error:", error);
+      alert(`Order Failed: ${error.response?.data?.message || 'Server connection error'}`);
+    } finally {
+      setLoading(false);
     }
   };
+
 
   if (orderPlaced) {
     return (
       <Container className="text-center py-5">
         <div className="success-animation">
           <h2 className="mb-3">✓ Order Placed Successfully!</h2>
-          <p className="text-muted mb-4">Thank you for your purchase. You will receive an order confirmation email shortly.</p>
+          <p className="text-muted mb-4">Thank you for your purchase. You will receive an order confirmation email
+            shortly.</p>
           <Link to="/">
             <Button className="btn btn-primary btn-lg">Continue Shopping</Button>
           </Link>
         </div>
       </Container>
-    );
-  }
-
-  const shippingCost = getTotalPrice() > 50 ? 0 : 10;
-  const tax = getTotalPrice() * 0.1;
-  const total = getTotalPrice() + shippingCost + tax;
+    )
+  };
 
   return (
     <div className="checkout-page">
       <Container>
         <h1 className="my-4">Checkout</h1>
-
+        
         <Row>
           <Col lg={8} md={12} className="mb-4">
             <div className="checkout-form">
@@ -291,12 +349,15 @@ const CheckoutPage = () => {
                     </Col>
                   </Row>
                   <Alert variant="info" className="mt-3">
-                    🔒 Your payment information is encrypted and secure
+
                   </Alert>
                 </div>
-
-                <Button type="submit" className="btn btn-primary btn-lg w-100">
-                  Place Order
+                <Button
+                  type="submit"
+                  className="btn btn-primary btn-lg w-100"
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Place Order'}
                 </Button>
               </Form>
             </div>
@@ -320,7 +381,7 @@ const CheckoutPage = () => {
                   </div>
                 ))}
               </div>
-
+              
               <div className="order-calculation">
                 <div className="calc-row">
                   <span>Subtotal</span>
@@ -337,7 +398,7 @@ const CheckoutPage = () => {
                 <div className="calc-divider"></div>
                 <div className="calc-total">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>${finalTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
