@@ -1,348 +1,293 @@
-import React, { useContext, useState } from 'react';
-import { Container, Row, Col, Button, Form, Table, Modal, Nav, Tab } from 'react-bootstrap';
-import { ProductContext } from '../contexts/ProductContext';
-import { AuthContext } from '../contexts/AuthContext';
-import './AdminDashboard.css';
+import React, { useContext, useState} from 'react';
+import {Container, Row, Col, Card, Button, Form, Modal, Nav, Tab} from 'react-bootstrap';
+import {ProductContext} from '../contexts/ProductContext';
+import {AuthContext} from '../contexts/AuthContext';
+import {Table} from 'react-bootstrap';
+import axios from 'axios';
+import'./AdminDashboard.css';
 
 const AdminDashboard = () => {
-  const { products, addProduct, updateProduct, deleteProduct } = useContext(ProductContext);
-  const { users } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('products');
+  //We only need 'products' and the refresh function ;fetchProducts'
+  const { products, fetchProducts } = useContext(ProductContext);
+  const {currentUser} = useContext(AuthContext);
+  const [activeTab , setActiveTab] = useState('products');
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    category: 'Tops',
-    size: 'XS,S,M,L,XL',
-    image: '',
-    description: ''
+
+  //Setup api helper
+  const api = axios.create({
+    baseURL: process.env.REACT_APP_API_BASE_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}` //admin Token
+    }
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+const [formData, setFormData] = useState({
+ id: null,
+ name: '',
+ price: '',
+ category: 'Tops',
+ size: 'XS, S, M, L, XL', // Input is a string
+ image: '',
+ description: ''
+ });
 
-  const handleAddProduct = (e) => {
-    e.preventDefault();
-    addProduct({
-      ...formData,
-      price: parseFloat(formData.price),
-      size: formData.size.split(',').map(s => s.trim())
-    });
-    setFormData({
-      name: '',
-      price: '',
-      category: 'Tops',
-      size: 'XS,S,M,L,XL',
-      image: '',
-      description: ''
-    });
-    setShowModal(false);
-  };
 
-  const handleDeleteProduct = (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      deleteProduct(id);
+ const handleInputChange = (e) => {
+  const { name, value } = e.target;
+  setFormData(prev => ({
+    ...prev,
+    name: value 
+  }))
+
+};
+
+const handleAddProduct = async (e) => {
+  e.preventDefault();
+
+  // CONVERSION: Frontend String ("S, M") -> Backend Array (["S", "M"])
+const productPayload = {
+  name: formData.name,
+  price: parseFloat(formData.price),
+  category: formData.category,
+  description: formData.description,
+  image: formData.image,
+  size: formData.size.split(',').map(s => s.trim()) // Backend expects 'sizes' (plural) array
+};
+
+try{
+  if(isEditing){
+    //update Existing Product
+    await api.put(`/products/${formData.id}`, productPayload);
+    alert('Product Updated Successfully!');
+  } else {
+    // Create New Product
+    await api.post('/products', productPayload);
+    alert('Product Added Successfully!');
+  }
+  
+  //refresh the list immediately so the new items shows up
+  await fetchProducts();
+
+  //Reset form and close modal
+  setFormData({ name: '', price: '', category: 'Tops', size: '', image: '', description: '' });
+ setShowModal(false);
+ 
+} catch (error) {
+  console.error(error);
+  alert(`Operation failed: ${error.response?.data?.message || 'Server Error'}`);
+  }
+};
+
+const handleDeleteProduct = async (Id) => {
+  if (window.confirm('Are you sure you want to delete this product?')){
+
+    try{
+      await api.delete(`/products/${Id}`);
+      alert('Product Deleted!');
+      await fetchProducts(); //refresh list
+    } catch (error) {
+      alert (`Delete failed: ${error.response?.data?.message || 'Server Error'}`);
     }
-  };
+  }
+    };
 
-  const stats = {
-    totalProducts: products.length,
-    totalUsers: users.length,
-    totalOrders: 42,
-    totalRevenue: '$12,840'
-  };
+    const openEditModal = (product) => {
+      setFormData({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        category: product.category,
+        image: product.image, //Keep the URL/Filename as is
+        description: product.description,
+        //CONVERSION: Backend Array (["S", "M"]) -> Frontend String ("S, M")
+        size: Array.isArray(product.sizes) ? product.sizes.join(', ') : ''
+      });
+      setIsEditing(true);
+      setShowModal(true);
+    };
+      const openAddModal = () => {
+        setIsEditing(false);
+        setFormData({ 
+          name: '', 
+          price: '', 
+          category: 'Tops', 
+          size: 'XS,S,M,L,XL', 
+          image: '', 
+          description: '' 
+        });
+        setShowModal(true);
+      };
 
-  return (
-    <div className="admin-dashboard">
-      <Container fluid>
-        <h1 className="mb-4">Admin Dashboard</h1>
+      //Mock Stats (You can wire these up to an API endpoint later if needed)
+      const stats = {
+        totalProducts: products.length,
+        totalUsers: 12, 
+        totalOrders: 42,
+        totalRevenue: '$12,840'
+ };
+ return (
+   <div className="admin-dashboard">
+   <Container fluid>
+    <h1 className="mb-4">Admin Dashboard</h1>
+     {/* Statistics Cards */}
+   <Row className="mb-5">
+   <Col lg={3} md={6} sm={12} className="mb-4">
+     <div className="stat-card">
+     <div className="stat-number">{stats.totalProducts}</div>
+     <div className="stat-label">Total Products</div>
+ </div>
+    </Col>
+    <Col lg={3} md={6} sm={12} className="mb-4">
+      <div className="stat-card">
+      <div className="stat-number">{stats.totalUsers}</div>
+      <div className="stat-label">Total Users</div>
+  </div>
+    </Col> 
+    <Col lg={3} md={6} sm={12} className="mb-4">
+      <div className="stat-card">
+      <div className="stat-number">{stats.totalOrders}</div> 
+      <div className="stat-label">Total Orders</div>
+  </div>
+    </Col>
+    <Col lg={3} md={6} sm={12} className="mb-4">
+      <div className="stat-card">
+      <div className="stat-number">{stats.totalRevenue}</div>
+      <div className="stat-label">Total Revenue</div>
+  </div>
+    </Col>
+   </Row>
 
-        {/* Statistics Cards */}
-        <Row className="mb-5">
-          <Col lg={3} md={6} sm={12} className="mb-4">
-            <div className="stat-card">
-              <div className="stat-icon">📦</div>
-              <div className="stat-number">{stats.totalProducts}</div>
-              <div className="stat-label">Total Products</div>
-            </div>
-          </Col>
-          <Col lg={3} md={6} sm={12} className="mb-4">
-            <div className="stat-card">
-              <div className="stat-icon">👥</div>
-              <div className="stat-number">{stats.totalUsers}</div>
-              <div className="stat-label">Total Users</div>
-            </div>
-          </Col>
-          <Col lg={3} md={6} sm={12} className="mb-4">
-            <div className="stat-card">
-              <div className="stat-icon">📋</div>
-              <div className="stat-number">{stats.totalOrders}</div>
-              <div className="stat-label">Total Orders</div>
-            </div>
-          </Col>
-          <Col lg={3} md={6} sm={12} className="mb-4">
-            <div className="stat-card">
-              <div className="stat-icon">💰</div>
-              <div className="stat-number">{stats.totalRevenue}</div>
-              <div className="stat-label">Total Revenue</div>
-            </div>
-          </Col>
-        </Row>
+    <Tab.Container activeKey={active} onSelect={(k) => setActive(k)}>
+      <Nav variant="pills" className="mb-4">
+        <Nav.Item><Nav.Link eventKey="products">Products</Nav.Link></Nav.Item>
+      <Nav.Item><Nav.Link eventKey="users">Users</Nav.Link></Nav.Item>
+      <Nav.Item><Nav.Link eventKey="orders">Orders</Nav.Link></Nav.Item>
+ </Nav>
 
-        {/* Tabs */}
-        <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k)}>
-          <Nav variant="pills" className="mb-4">
-            <Nav.Item>
-              <Nav.Link eventKey="products">Products</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="users">Users</Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link eventKey="orders">Orders</Nav.Link>
-            </Nav.Item>
-          </Nav>
+      <Tab.Content>
+        {/* Products Tab */}
+        <Tab.Pane eventKey="products">
+          <div className="admin-card">
+          <div className="card-header">  
+        <h5>Product Management</h5>
+         <Button className="btn btn-primary" onClick={openAddModal}>
+        + Add Product
+ </Button>
+ </div>
 
-          <Tab.Content>
-            {/* Products Tab */}
-            <Tab.Pane eventKey="products">
-              <div className="admin-card">
-                <div className="card-header">
-                  <h5>Product Management</h5>
-                  <Button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setShowModal(true);
-                    }}
-                  >
-                    + Add Product
-                  </Button>
-                </div>
+ <Table className="admin-table" responsive>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Price</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {products.map(product => (
+        <tr key={product.id}>
+          <td>{product.id}</td>
+          <td>{product.name}</td>
+          <td>{product.category}</td>
+          <td>${parseFloat(product.price).toFixed(2)}</td>
+          <td>
+            <Button variant="warning" size="sm" className="me-2" onClick={() => openEditModal(product)}>
+     Edit
+     </Button>
+     <Button variant="danger" size="sm" onClick={() => handleDeleteProduct(product.id)}>
+      Delete
+     </Button>
+   </td>
+   </tr>
+   ))}
+  </tbody>
+ </Table>
+ </div>
+ </Tab.Pane>
 
-                <Table className="admin-table" responsive>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Category</th>
-                      <th>Price</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map(product => (
-                      <tr key={product.id}>
-                        <td>{product.id}</td>
-                        <td>{product.name}</td>
-                        <td>{product.category}</td>
-                        <td>${product.price.toFixed(2)}</td>
-                        <td>
-                          <Button
-                            variant="sm"
-                            className="btn btn-warning btn-sm me-2"
-                            onClick={() => {
-                              setFormData(product);
-                              setIsEditing(true);
-                              setShowModal(true);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="btn-sm"
-                            onClick={() => handleDeleteProduct(product.id)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Tab.Pane>
+    {/* Placeholder for future features */ }
+    <Tab.Pane eventKey="users">
+      <div className="admin-card"><p className="text-center py-5">User management coming
+soon...</p></div>
+    </Tab.Pane>
+    <Tab.Pane eventKey="orders">
+      <div className="admin-card"><p className="text-center py-5">Order management coming
+soon...</p></div>
+    </Tab.Pane>
+ </Tab.Content>
+ </Tab.Container>
+</Container>
 
-            {/* Users Tab */}
-            <Tab.Pane eventKey="users">
-              <div className="admin-card">
-                <h5 className="mb-4">User Management</h5>
+{/* Add/Edit Product Modal */}
+<Modal show={showModal} onHide={() => setShowModal(false)} centered>
+  <Modal.Header closeButton>
+    <Modal.Title>{isEditing ? 'Edit Product' : 'Add New Product'}</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    <Form onSubmit={handleAddProduct}>
+      <Form.Group className="mb-3">
+        <Form.Label>Product Name</Form.Label>
+        <Form.Control type="text" name="name" value={formData.name} onChange={handleInputChange} required
+/>
+        </Form.Group>
+      <Form.Group className="mb-3">
+        <Form.Label>Price ($)</Form.Label>
+        <Form.Control type="number" name="price" value={formData.price} onChange={handleInputChange}
+step="0.01" required />
+ </Form.Group>
 
-                <Table className="admin-table" responsive>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map(user => (
-                      <tr key={user.id}>
-                        <td>{user.id}</td>
-                        <td>{user.name}</td>
-                        <td>{user.email}</td>
-                        <td>
-                          <span className="badge bg-info">
-                            {user.isAdmin ? 'Admin' : 'Customer'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="badge bg-success">Active</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Tab.Pane>
+      <Form.Group className="mb-3">
+        <Form.Label>Category</Form.Label>
+        <Form.Select name="category" value={formData.category} onChange={handleInputChange}>
+        <option>Tops</option>
+        <option>Bottoms</option>
+        <option>Dresses</option>
+        <option>Outerwear</option>
+        <option>Footwear</option>
+ </Form.Select>
+ </Form.Group>
 
-            {/* Orders Tab */}
-            <Tab.Pane eventKey="orders">
-              <div className="admin-card">
-                <h5 className="mb-4">Order Management</h5>
+      <Form.Group className="mb-3">
+        <Form.Label>Sizes (comma separated)</Form.Label>
+        <Form.Control 
+        type="text" 
+        name="size" 
+        value={formData.size} 
+        onChange={handleInputChange}
+        placeholder="XS, S, M, L, XL"
+        required
+/>
+   <Form.Text className="text-muted">Separate sizes with commas (e.g 28, 30, 32)</Form.Text>
+ </Form.Group> 
 
-                <Table className="admin-table" responsive>
-                  <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Date</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>#001</td>
-                      <td>John Doe</td>
-                      <td>2025-11-20</td>
-                      <td>$150.00</td>
-                      <td>
-                        <span className="badge bg-success">Delivered</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>#002</td>
-                      <td>Jane Smith</td>
-                      <td>2025-11-22</td>
-                      <td>$89.99</td>
-                      <td>
-                        <span className="badge bg-info">Shipped</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>#003</td>
-                      <td>Mike Johnson</td>
-                      <td>2025-11-23</td>
-                      <td>$220.00</td>
-                      <td>
-                        <span className="badge bg-warning">Processing</span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </Table>
-              </div>
-            </Tab.Pane>
-          </Tab.Content>
-        </Tab.Container>
-      </Container>
+      <Form.Group className="mb-3">
+        <Form.Label> Image Filename or URL </Form.Label>
+        <Form.Control 
+        type="text" 
+        name="image" 
+        value={formData.image} 
+        onChange={handleInputChange}
+        placeholder="e.g. whiteTshirt.jpg"
+ />
+ </Form.Group>
 
-      {/* Add/Edit Product Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{isEditing ? 'Edit Product' : 'Add New Product'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleAddProduct}>
-            <Form.Group className="mb-3">
-              <Form.Label>Product Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Enter product name"
-              />
-            </Form.Group>
+<Form.Group className="mb-3">
+        <Form.Label>Description</Form.Label>
+        <Form.Control as="textarea" rows={3} name="description" value={formData.description} onChange={handleInputChange} required />
+ </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Price</Form.Label>
-              <Form.Control
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                placeholder="Enter price"
-                step="0.01"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Category</Form.Label>
-              <Form.Select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-              >
-                <option>Tops</option>
-                <option>Bottoms</option>
-                <option>Dresses</option>
-                <option>Outerwear</option>
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Sizes (comma-separated)</Form.Label>
-              <Form.Control
-                type="text"
-                name="size"
-                value={formData.size}
-                onChange={handleInputChange}
-                placeholder="XS,S,M,L,XL"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Image URL</Form.Label>
-              <Form.Control
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                placeholder="https://via.placeholder.com/300"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="Enter product description"
-              />
-            </Form.Group>
-
-            <Button type="submit" className="btn btn-primary w-100">
-              {isEditing ? 'Update Product' : 'Add Product'}
-            </Button>
-          </Form>
-        </Modal.Body>
-      </Modal>
-    </div>
-  );
+  <Button type="submit" className="btn btn-primary w-100">
+    {isEditing ? 'Update Product' : 'Add Product'}
+  </Button>
+ </Form> 
+  </Modal.Body>
+</Modal>
+</div>
+ );
 };
 
 export default AdminDashboard;
