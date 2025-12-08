@@ -25,7 +25,7 @@ const CheckoutPage = () => {
     cardName: '',
     cardNumber: '',
     cardExpiry: '',
-    cardCVC: '',
+    cardCVC: ''
   });
 
   const [orderPlaced, setOrderPlaced] = useState(false);
