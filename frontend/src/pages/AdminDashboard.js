@@ -1,4 +1,4 @@
-import React, { useContext,useState} from 'react';
+import React, { useContext, useState} from 'react';
 import {Container, Row, Col, Card, Button, Form, Modal, Nav, Tab} from 'react-bootstrap';
 import {ProductContext} from '../contexts/ProductContext';
 import {AuthContext} from '../contexts/AuthContext';
@@ -10,7 +10,7 @@ const AdminDashboard = () => {
   //We only need 'products' and the refresh function ;fetchProducts'
   const { products, fetchProducts } = useContext(ProductContext);
   const {currentUser} = useContext(AuthContext);
-  const [active , setActive] = useState('products');
+  const [activeTab , setActiveTab] = useState('products');
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
