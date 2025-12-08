@@ -12,7 +12,7 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [isAdminLogin, setIsAdminLogin] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -21,11 +21,16 @@ const LoginPage = () => {
       return;
     }
 
-    const result = login(email, password, isAdminLogin);
-    if (result.success) {
-      navigate(isAdminLogin ? '/admin' : '/');
-    } else {
-      setError(result.message);
+    try {
+      const result = await login(email, password, isAdminLogin);
+
+      if (result.success){
+        navigate(isAdminLogin ? '/admin' : '/');
+      }else {
+        setError(result.message);
+      }
+    }catch (err) {
+      setError('Failed to login');
     }
   };
 
