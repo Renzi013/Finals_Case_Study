@@ -14,7 +14,7 @@ const AdminDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  //Set up api helper
+  //Setup api helper
   const api = axios.create({
     baseURL: process.env.REACT_APP_API_BASE_URL,
     headers: {
