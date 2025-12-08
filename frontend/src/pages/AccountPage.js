@@ -8,8 +8,8 @@ const AccountPage = () => {
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
     email: currentUser?.email || '',
-    phone: '',
-    address: ''
+    phone: currentUser?.phone || '',
+    address: currentUser?.address || ''
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -21,11 +21,17 @@ const AccountPage = () => {
     }));
   };
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    updateUserProfile(formData);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+
+    const result = await updateUserProfile(formData);
+
+    if (result.success) {
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }else {
+      alert("Failed to update profile");
+    }
   };
 
   return (
