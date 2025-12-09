@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
@@ -10,6 +12,52 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    // Admin: Get all orders (Matches AdminDashboard.js logic)
+    public function indexAdmin(Request $request)
+    {
+        // Check if user is admin
+        if (!$request->user()->is_admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $orders = Order::with('items.product', 'user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($orders);
+    }
+
+    // Admin: Update order status
+    public function updateStatus(Request $request, $id)
+    {
+        // Check if user is admin
+        if (!$request->user()->is_admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $request->validate([
+            'status' => 'required|string|in:Processing,Shipped,Delivered,Cancelled',
+        ]);
+
+        $order = Order::findOrFail($id);
+        $order->status = $request->status;
+        $order->save();
+
+        return response()->json([
+            'message' => 'Order status updated', 'order' => $order
+        ]);
+    }
+    
+    // Admin: Get platform statistics
+    public function stats ()
+    {
+        return response()->json([
+            'totalProducts' => Product::count(),
+            'totalUsers'    => User::count(),
+            'totalOrders'   => Order::count(),
+            // Sum the 'total_price' column from orders
+            'totalRevenue'  => Order::sum('total_price'),
+        ]);
+    }
     // Place a new order (Matches CheckoutPage.js logic)
     public function store(Request $request)
     {

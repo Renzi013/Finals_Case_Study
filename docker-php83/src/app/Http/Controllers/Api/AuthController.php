@@ -10,7 +10,15 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    // Handle Registration (matches RegisterPage.js logic)
+    public function index(Request $request)
+    {
+        // Check if user is admin
+        if (!$request->user()->is_admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        return User::all();
+    }
+
     public function register(Request $request)
     {
         $validated = $request->validate([
