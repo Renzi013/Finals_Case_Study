@@ -14,12 +14,11 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    // Validation
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
@@ -35,15 +34,20 @@ const RegisterPage = () => {
       return;
     }
 
-    const result = register(email, password, name);
-    if (result.success) {
-      setSuccess(result.message);
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
-    } else {
-      setError(result.message);
-    }
+    try {
+      const result = await register(email, password, name);
+      
+      if (result.success) {
+        setSuccess(result.message);
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      } else {
+        setError(result.message);
+      }
+      }catch (err) {
+        setError('Registration failed');
+      }
   };
 
   return (

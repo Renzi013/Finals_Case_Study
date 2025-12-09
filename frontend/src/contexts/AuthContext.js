@@ -1,87 +1,106 @@
-import React, { createContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  // remove when refactoring (line 7-12)
   const [isAdmin, setIsAdmin] = useState(false);
-  const [users, setUsers] = useState([
-    { id: 1, email: 'admin@example.com', password: 'admin123', name: 'Admin User', isAdmin: true },
-    { id: 2, email: 'user@example.com', password: 'user123', name: 'Test User', isAdmin: false }
-  ]);
 
-  // refactor this to load from backend later
+  const api = axios.create({
+    baseURL: process.env.REACT_APP_API_BASE_URL,
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+  });
+
   useEffect(() => {
+    const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('currentUser');
-    const savedIsAdmin = localStorage.getItem('isAdmin');
-    if (savedUser) {
-      try {
-        setCurrentUser(JSON.parse(savedUser));
-        setIsAdmin(savedIsAdmin === 'true');
-      } catch (e) {
-        console.error('Failed to load user from localStorage', e);
+    if (token && savedUser) {
+      const userObj = JSON.parse(savedUser);
+      setCurrentUser(userObj);
+
+      setIsAdmin(userObj.is_admin === 1 || userObj.is_admin === true);
+    }
+  }, []);
+
+  const login = async (email, password, isAdminLogin = false) => {
+
+    try {
+      const response = await api.post('/login', { email, password, isAdminLogin });
+      const { user, token } = response.data;
+
+      if (isAdminLogin && !user.is_admin) {
+        return { success: false, message: 'Not authorized as admin' };
       }
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      setCurrentUser(user);
+      setIsAdmin(user.is_admin === 1 || user.is_admin === true);
+
+      return { success: true, message: 'Login successful' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Login failed'
+      };
     }
-  }, []);
+  };
 
-  // refactor to integrate with backend later
-  const register = useCallback((email, password, name) => {
-    
-    if (users.find(u => u.email === email)) {
-      return { success: false, message: 'Email already registered' };
+  const register = async (email, password, name) => {
+    try {
+      const response = await api.post('/register', { email, password, name });
+      const { user, token } = response.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      setCurrentUser(user);
+      setIsAdmin(false);
+      
+      return { success: true, message: 'Registration successful' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Registration failed'
+      };
     }
+  }
 
-    const newUser = {
-      id: Math.max(...users.map(u => u.id), 0) + 1,
-      email,
-      password,
-      name,
-      isAdmin: false
-    };
-
-    setUsers([...users, newUser]);
-    setCurrentUser(newUser);
-    setIsAdmin(false);
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    localStorage.setItem('isAdmin', 'false');
-    return { success: true, message: 'Registration successful' };
-  }, [users]);
-
-  const login = useCallback((email, password, isAdminLogin = false) => {
-    const user = users.find(u => u.email === email && u.password === password);
-
-    if (!user) {
-      return { success: false, message: 'Invalid email or password' };
+  const logout = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      if (token) {
+        await api.post('/logout', {}, { headers: { Authorization: 'Bearer ${token}' } });
+      }
+    } catch (e) {
+      console.error("Logout error", e);
+    } finally {
+      setCurrentUser(null);
+      setIsAdmin(false);
+      localStorage.clear();
     }
+  };
 
-    if (isAdminLogin && !user.isAdmin) {
-      return { success: false, message: 'Not authorized as admin' };
-    }
+  const updateUserProfile = async(updates) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await api.put('/profile', updates, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    setCurrentUser(user);
-    setIsAdmin(user.isAdmin && isAdminLogin);
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    localStorage.setItem('isAdmin', user.isAdmin && isAdminLogin ? 'true' : 'false');
-    return { success: true, message: 'Login successful' };
-  }, [users]);
+      const updatedUser = response.data.user;
 
-  const logout = useCallback(() => {
-    setCurrentUser(null);
-    setIsAdmin(false);
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('isAdmin');
-  }, []);
-
-  const updateUserProfile = useCallback((updates) => {
-    if (currentUser) {
-      const updatedUser = { ...currentUser, ...updates };
       setCurrentUser(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
-    }
-  }, [currentUser, users]);
 
+      return { success: true };
+    } catch (error) {
+      console.error(error);
+      return { success: false, message: 'Update failed' };
+    }
+  };
+
+  
   return (
     <AuthContext.Provider value={{
       currentUser,
@@ -89,8 +108,7 @@ export const AuthProvider = ({ children }) => {
       register,
       login,
       logout,
-      updateUserProfile,
-      users
+      updateUserProfile
     }}>
       {children}
     </AuthContext.Provider>
