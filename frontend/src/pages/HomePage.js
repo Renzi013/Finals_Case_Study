@@ -2,11 +2,19 @@ import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Container, Row, Col, Button, Spinner } from 'react-bootstrap';
 import { ProductContext } from '../contexts/ProductContext';
+import { AuthContext } from '../contexts/AuthContext';
 import './HomePage.css';
 
+
 const HomePage = () => {
-  const { products, loading} = useContext(ProductContext);
+  const { isAdmin } = useContext(AuthContext);
+  const { products, loading } = useContext(ProductContext);
   const featuredProducts = products.slice(0, 6);
+
+  // Redirect Admin away from the landing page
+  if (isAdmin) {
+    return <Link to="/admin" replace />;
+  }
 
   return (
     <div className="homepage">
@@ -15,7 +23,7 @@ const HomePage = () => {
         <Container>
           <Row>
             <Col lg={8} md={10} sm={12} className="mx-auto text-center">
-              <h1>Welcome to StyleHub</h1>
+              <h1>Welcome to WearDistrict</h1>
               <p>Discover the latest trends in fashion. Shop our exclusive collection today!</p>
               <Link to="/products">
                 <Button size="lg" className="btn btn-light text-primary">

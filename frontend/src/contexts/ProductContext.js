@@ -3,30 +3,27 @@ import axios from 'axios';
 
 export const ProductContext = createContext();
 
+const api = axios.create({ baseURL: process.env.REACT_APP_API_BASE_URL });
+
 export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true); // Added loading state
+  const [loading, setLoading] = useState(true);
 
   // Axios setup
-  const api = axios.create({ baseURL: process.env.REACT_APP_API_BASE_URL });
-  const STORAGE_URL = process.env.REACT_APP_STORAGE_URL;
+  const STORAGE_URL = process.env.REACT_APP_STORAGE_URL || 'http://localhost:8082/storage';
 
-  // CRITICAL HELPER: Formats backend data for frontend
   const formatProductImage = useCallback(
     (product) => {
       return {
         ...product,
 
-        // 1. Fix Image Path: Prepend storage URL if it's just a filename
         image:
           product.image && !product.image.startsWith('http')
             ? `${STORAGE_URL}/${product.image}`
             : product.image,
 
-        // 2. Fix Size Mismatch: Backend sends 'sizes' (plural), Frontend uses 'size' (singular)
         size: product.sizes || product.size || [],
 
-        // 3. Ensure Price is a Number
         price: parseFloat(product.price),
       };
     },
